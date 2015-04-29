@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>2F314499-2651-46B1-A722-E18F083A4289</string>
+	<key>IDESourceControlProjectName</key>
+	<string>trileks</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>3109AC07A004A1438D2C436CBEF3154E9C1B96BE</key>
+		<string>https://github.com/evanfarrar/trileks-ios.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>trileks.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>3109AC07A004A1438D2C436CBEF3154E9C1B96BE</key>
+		<string>../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/evanfarrar/trileks-ios.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>3109AC07A004A1438D2C436CBEF3154E9C1B96BE</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>3109AC07A004A1438D2C436CBEF3154E9C1B96BE</string>
+			<key>IDESourceControlWCCName</key>
+			<string>trileks</string>
+		</dict>
+	</array>
+</dict>
+</plist>

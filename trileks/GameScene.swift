@@ -3,10 +3,10 @@ import SpriteKit
 func + (left: CGPoint, right: CGPoint) -> CGPoint {
     return CGPoint(x: left.x + right.x, y: left.y + right.y)
 }
-
-func - (left: CGPoint, right: CGPoint) -> CGPoint {
-    return CGPoint(x: left.x - right.x, y: left.y - right.y)
-}
+//
+//func - (left: CGPoint, right: CGPoint) -> CGPoint {
+//    return CGPoint(x: left.x - right.x, y: left.y - right.y)
+//}
 
 func * (point: CGPoint, scalar: CGFloat) -> CGPoint {
     return CGPoint(x: point.x * scalar, y: point.y * scalar)
@@ -46,22 +46,13 @@ struct PhysicsCategory {
 
 class Actor {
     var alive = true
-    var position : CGPoint {
-        didSet {
-           move()
-        }
-    }
+    var position : CGPoint
     init(position : CGPoint) {
         self.position = position
     }
-    
-    func move() {
-        
-    }
-    
 }
 
-class Player : Actor{
+class Player : Actor {
     let node = SKSpriteNode(imageNamed: "frog")
     override init(position : CGPoint) {
         super.init(position: position)
@@ -72,14 +63,22 @@ class Player : Actor{
         node.physicsBody?.contactTestBitMask = PhysicsCategory.Robot + PhysicsCategory.Wreck
         node.physicsBody?.collisionBitMask = PhysicsCategory.None
     }
-    override func move() {
+    func move(position: CGPoint) {
+        self.position = position
         let actionMove = SKAction.moveTo(self.position, duration: 0.75)
         self.node.runAction(actionMove)
     }
-    
+    func teleport(position: CGPoint) {
+        self.position = position
+        self.node.position = position
+    }
 }
 
-class Robot : Actor {
+func ==(lhs: Robot, rhs: Robot) -> Bool {
+    return ObjectIdentifier(lhs) == ObjectIdentifier(rhs)
+}
+
+class Robot : Actor, Equatable, Hashable {
     let node = SKSpriteNode(imageNamed: "robot")
     let wreck = SKSpriteNode(imageNamed: "frog")
     override init(position: CGPoint) {
@@ -91,9 +90,14 @@ class Robot : Actor {
         node.physicsBody?.contactTestBitMask = PhysicsCategory.Robot + PhysicsCategory.Wreck
         node.physicsBody?.collisionBitMask = PhysicsCategory.None
     }
-    override func move() {
+    func move(position: CGPoint) {
+        self.position = position
         let actionMove = SKAction.moveTo(self.position, duration: 1.0)
         self.node.runAction(actionMove)
+    }
+    
+    var hashValue: Int {
+        return ObjectIdentifier(self).hashValue
     }
 }
 
@@ -103,18 +107,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     
     override func didMoveToView(view: SKView) {
-        self.player = Player(position: randomGridPosition())
         physicsWorld.gravity = CGVectorMake(0, 0)
         physicsWorld.contactDelegate = self
-        backgroundColor = SKColor.whiteColor()
-        addChild(player.node)
-
-        for _ in 1...5 {
-            let robot = Robot(position: randomGridPosition())
-            robots.append(robot)
-            addChild(robot.node)
-        }
-        
+        self.restart()
     }
     
     func randomGridPosition() -> CGPoint {
@@ -125,7 +120,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         return CGPoint(x: CGFloat(actualX), y: CGFloat(actualY))
     }
     
-    override func touchesEnded(touches: NSSet, withEvent event: UIEvent) {
+    override func touchesEnded(touches: Set<NSObject>, withEvent event: UIEvent) {
+        
         var animatingRobots = false
         for robot in robots {
             if robot.node.hasActions() {
@@ -135,20 +131,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
         if !animatingRobots && !player.node.hasActions(){
-            let touch = touches.anyObject() as UITouch
+            let touch = touches.first as! UITouch
             let touchLocation = touch.locationInNode(self)
-            let offset = touchLocation - player.position
+            let offset = touchLocation + player.position
             let direction = offset.normalized().cardinalized()
             let moveAmount = direction * 82
             let realDest = moveAmount + player.position
-            player.position = realDest
+            player.move(realDest)
 
             for robot in robots {
-                let offset = realDest - robot.position
+                let offset = realDest + robot.position
                 let direction = offset.normalized().cardinalized()
                 let moveAmount = direction * 82
                 let realDest = moveAmount + robot.position
-                robot.position = realDest
+                robot.move(realDest)
             }
         }
     }
@@ -172,19 +168,43 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         player.node.runAction(blinkOut)
     }
     
-    func robotsDie(robot1: SKNode, otherNode robot2: SKNode) {
+    func robotsDie(robotNode1: SKNode, otherNode robotNode2: SKNode) {
         let removeAfterDelay = SKAction.sequence([SKAction.fadeOutWithDuration(0.3), SKAction.removeFromParent()])
-        robot1.runAction(removeAfterDelay)
-        robot2.runAction(removeAfterDelay)
+        robotNode1.runAction(removeAfterDelay)
+        robotNode2.runAction(removeAfterDelay)
+        var collidingRobots : [Robot] = [] as [Robot]
         let wreck = SKSpriteNode(imageNamed: "wreck")
-        for robot in robots {
-            if (robot.node == robot1 || robot.node == robot2) {
-                wreck.position = robot.position
-                wreck.alpha = 0.0
-                self.addChild(wreck)
-                wreck.runAction(SKAction.fadeInWithDuration(0.3))
-                break
+        for (index,robot) in enumerate(robots) {
+            if (robot.node == robotNode1 || robot.node == robotNode2) {
+                collidingRobots.append(robot)
             }
+        }
+        var newRobots : [Robot] = []
+        var robotSet : Set<Robot>  = Set(robots).subtract(collidingRobots)
+        for robot in robotSet {
+            newRobots.append(robot)
+        }
+        robots = newRobots
+        
+        wreck.position = collidingRobots.first!.position
+        wreck.alpha = 0.0
+        self.addChild(wreck)
+        wreck.runAction(SKAction.fadeInWithDuration(0.3))
+    }
+    
+    func teleport() {
+        player.teleport(randomGridPosition())
+    }
+    
+    func restart() {
+        self.player = Player(position: randomGridPosition())
+        backgroundColor = SKColor.whiteColor()
+        addChild(player.node)
+        
+        for _ in 1...2 {
+            let robot = Robot(position: randomGridPosition())
+            robots.append(robot)
+            addChild(robot.node)
         }
     }
 }
